@@ -25,9 +25,9 @@ const int MAX_DATA = 128;		//データの最大数
 //*******************************
 namespace
 {
-void ZeroClear(unsigned char* aData);
-void CopyNumber(unsigned char* aData, int nNum, char cNum, int aNum[]);
-void Output(unsigned char* aData);
+void ZeroClear(unsigned char* pMemory);
+int CopyToBuffer(unsigned char* pMemory, void* pSource, int nIdx, int nSize, int nMaxSize);
+void Output(unsigned char* pMemory);
 void WaitPressEnter(void);
 }// namespaceはここまで
 
@@ -39,17 +39,19 @@ void main(void)
 	int nNum = 1;						//int型変数
 	char cNum = 2;						//char型変数
 	int aNum[MAX_NUMBER] = { 3,4,5,6 };	//int型配列
-
-	unsigned char aData[MAX_DATA];	//配列
+	unsigned char pMemory[MAX_DATA];	//配列
+	int nIdx = 0;						//インデックス数
 
 	//ゼロクリア
-	ZeroClear(&aData[0]);
+	ZeroClear(pMemory);
 
 	//値をコピーする
-	CopyNumber(aData, nNum, cNum, &aNum[0]);
+	nIdx += CopyToBuffer(pMemory, &nNum, nIdx, sizeof(nNum), MAX_DATA);
+	nIdx += CopyToBuffer(pMemory, &cNum, nIdx, sizeof(cNum), MAX_DATA);
+	nIdx += CopyToBuffer(pMemory, aNum, nIdx, sizeof(aNum), MAX_DATA);
 
 	//出力
-	Output(aData);
+	Output(pMemory);
 
 	//Enter入力待ち
 	WaitPressEnter();
@@ -60,50 +62,46 @@ namespace
 //-------------------------------------------------
 //ゼロクリア
 //-------------------------------------------------
-void ZeroClear(unsigned char* aData)
+void ZeroClear(unsigned char* pMemory)
 {
 	//メモリのセット
-	memset(&aData[0], 0, sizeof(aData));
+	memset(&pMemory[0], 0, sizeof(pMemory));
 }
 
 //-------------------------------------------------
 //値をコピーする
 //-------------------------------------------------
-void CopyNumber(unsigned char* aData, int nNum, char cNum, int aNum[])
+int CopyToBuffer(unsigned char* pMemory, void* pSource, int nIdx, int nSize, int nMaxSize)
 {
-	//nNum
-	memcpy(&aData[0], &nNum, sizeof(nNum));
-
-	//cNum
-	memcpy(&aData[sizeof(nNum)], &cNum, sizeof(cNum));
-
-	for (int i = 0; i < MAX_NUMBER; i++)
-	{
-		//アドレスのインデックス数
-		int nIndex = sizeof(nNum) + sizeof(char) + (sizeof(int) * i);
-
-		//aNum[0] ～ aNum[3]
-		memcpy(&aData[nIndex], &aNum[i], sizeof(aNum));
+	if ((nIdx + nSize) <= nMaxSize)
+	{//バッファオーバーランのチェックして問題無し
+		memcpy(&pMemory[nIdx], pSource, nSize);
 	}
+	else
+	{//オーバーランしている
+		printf("\n ※ バッファオーバーラン ※");	//メッセージ
+	}
+
+	return nSize;
 }
 
 //-------------------------------------------------
 //出力
 //-------------------------------------------------
-void Output(unsigned char* aData)
+void Output(unsigned char* pMemory)
 {
-	//aDataのポインタ
-	unsigned char* pData = (unsigned char*)&aData[0];
+	//pMemoryのポインタ
+	unsigned char* pSource = pMemory;
 
 	//メッセージ
 	printf("\n 《 16進数表示 》\n");
 
-	//表示に必要なサイズ
-	int nSize = sizeof(int) + sizeof(char) + sizeof(int[4]);
+	//インデックス数
+	int nIdx = sizeof(int) + sizeof(char) + sizeof(int[4]);
 
-	for (int i = 0; i < nSize; i++)
+	for (int i = 0; i < nIdx; i++)
 	{//16進数で表示する
-		printf("\n [ 0x%.2x ]", *(pData + i));
+		printf("\n [ 0x%.2x ]", *(pSource + i));
 	}
 }
 

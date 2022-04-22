@@ -97,7 +97,7 @@ void Output(unsigned char* aData)
 //=================================================
 void WaitPressEnter(void)
 {
-	printf("\n\n Press Enter");
+	printf("\n\n Press Enter");		//メッセージ
 	rewind(stdin);
 	getchar();
 }

@@ -16,7 +16,8 @@
 //*******************************
 namespace
 {
-const int MAX_DATA = 4;		//データの最大数
+const int MAX_NUMBER = 4;		//個数の最大数
+const int MAX_DATA = 128;		//データの最大数
 }// namespaceはここまで
 
 //*******************************
@@ -25,7 +26,7 @@ const int MAX_DATA = 4;		//データの最大数
 namespace
 {
 void ZeroClear(unsigned char* aData);
-void CopyNumber(int nNum, unsigned char* aData);
+void CopyNumber(unsigned char* aData, int nNum, char cNum, int aNum[]);
 void Output(unsigned char* aData);
 void WaitPressEnter(void);
 }// namespaceはここまで
@@ -35,17 +36,20 @@ void WaitPressEnter(void);
 //=================================================
 void main(void)
 {
-	int nNum = 0x01020304;			//int型変数
+	int nNum = 1;						//int型変数
+	char cNum = 2;						//char型変数
+	int aNum[MAX_NUMBER] = { 3,4,5,6 };	//int型配列
+
 	unsigned char aData[MAX_DATA];	//配列
 
 	//ゼロクリア
 	ZeroClear(&aData[0]);
 
-	//nNumの値をaDataにコピーする
-	CopyNumber(nNum, &aData[0]);
+	//値をコピーする
+	CopyNumber(aData, nNum, cNum, &aNum[0]);
 
 	//出力
-	Output(&aData[0]);
+	Output(aData);
 
 	//Enter入力待ち
 	WaitPressEnter();
@@ -53,27 +57,39 @@ void main(void)
 
 namespace
 {
-//=================================================
+//-------------------------------------------------
 //ゼロクリア
-//=================================================
+//-------------------------------------------------
 void ZeroClear(unsigned char* aData)
 {
-	//メモリのセット(セット先のアドレス,セットする値,セットするサイズ)
+	//メモリのセット
 	memset(&aData[0], 0, sizeof(aData));
 }
 
-//=================================================
+//-------------------------------------------------
 //値をコピーする
-//=================================================
-void CopyNumber(int nNum, unsigned char* aData)
+//-------------------------------------------------
+void CopyNumber(unsigned char* aData, int nNum, char cNum, int aNum[])
 {
-	//メモリのコピー(コピー先のアドレス,コピー元アドレス,コピーするサイズ)
-	memcpy(&aData[0], &nNum, sizeof(aData));
+	//nNum
+	memcpy(&aData[0], &nNum, sizeof(nNum));
+
+	//cNum
+	memcpy(&aData[sizeof(nNum)], &cNum, sizeof(cNum));
+
+	for (int i = 0; i < MAX_NUMBER; i++)
+	{
+		//アドレスのインデックス数
+		int nIndex = sizeof(nNum) + sizeof(char) + (sizeof(int) * i);
+
+		//aNum[0] ～ aNum[3]
+		memcpy(&aData[nIndex], &aNum[i], sizeof(aNum));
+	}
 }
 
-//=================================================
+//-------------------------------------------------
 //出力
-//=================================================
+//-------------------------------------------------
 void Output(unsigned char* aData)
 {
 	//aDataのポインタ
@@ -82,15 +98,18 @@ void Output(unsigned char* aData)
 	//メッセージ
 	printf("\n 《 16進数表示 》\n");
 
-	for (int i = 0; i < sizeof(int); i++)
+	//表示に必要なサイズ
+	int nSize = sizeof(int) + sizeof(char) + sizeof(int[4]);
+
+	for (int i = 0; i < nSize; i++)
 	{//16進数で表示する
 		printf("\n [ 0x%.2x ]", *(pData + i));
 	}
 }
 
-//=================================================
+//-------------------------------------------------
 //Enter入力待ち
-//=================================================
+//-------------------------------------------------
 void WaitPressEnter(void)
 {
 	printf("\n\n Press Enter");		//メッセージ

@@ -58,6 +58,7 @@ namespace
 //=================================================
 void ZeroClear(unsigned char* aData)
 {
+	//メモリのセット(セット先のアドレス,セットする値,セットするサイズ)
 	memset(&aData[0], 0, sizeof(aData));
 }
 
@@ -66,13 +67,8 @@ void ZeroClear(unsigned char* aData)
 //=================================================
 void CopyNumber(int nNum, unsigned char* aData)
 {
-	//nNumのポインタ
-	unsigned char* pNum = (unsigned char*)&nNum;
-
-	for (int i = 0; i < sizeof(int); i++)
-	{//nNumの値をaDataにコピーする
-		aData[i] = *(pNum + i);
-	}
+	//メモリのコピー(コピー先のアドレス,コピー元アドレス,コピーするサイズ)
+	memcpy(&aData[0], &nNum, sizeof(aData));
 }
 
 //=================================================

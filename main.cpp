@@ -97,7 +97,7 @@ void Output(unsigned char* pMemory)
 	printf("\n 《 16進数表示 》\n");
 
 	//インデックス数
-	int nIdx = sizeof(int) + sizeof(char) + sizeof(int[4]);
+	int nIdx = sizeof(int) + sizeof(char) + sizeof(int[MAX_NUMBER]);
 
 	for (int i = 0; i < nIdx; i++)
 	{//16進数で表示する

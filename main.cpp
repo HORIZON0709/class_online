@@ -8,6 +8,8 @@
 //*******************************
 //インクルード
 //*******************************
+#include "main.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -16,102 +18,65 @@
 //*******************************
 namespace
 {
-const int MAX_NUMBER = 4;		//個数の最大数
-const int MAX_DATA = 128;		//データの最大数
-}// namespaceはここまで
-
-//*******************************
-//プロトタイプ宣言
-//*******************************
-namespace
-{
-void ZeroClear(unsigned char* pMemory);
-int CopyToBuffer(unsigned char* pMemory, void* pSource, int nIdx, int nSize, int nMaxSize);
-void Output(unsigned char* pMemory);
-void WaitPressEnter(void);
-}// namespaceはここまで
+const int MAX_DATA = 4;		//データの最大数
+}//namespaceはここまで
 
 //=================================================
 //メイン関数
 //=================================================
 void main(void)
 {
-	int nNum = 1;						//int型変数
-	char cNum = 2;						//char型変数
-	int aNum[MAX_NUMBER] = { 3,4,5,6 };	//int型配列
-	unsigned char pMemory[MAX_DATA];	//配列
-	int nIdx = 0;						//インデックス数
+	/* 2.Winsockの初期化関数を実行する */
 
-	//ゼロクリア
-	ZeroClear(pMemory);
+	WSADATA wsaData;
+	int nErr = WSAStartup(WINSOCK_VERSION, &wsaData);	//WSAStartup関数：winsockの初期化処理
 
-	//値をコピーする
-	nIdx += CopyToBuffer(pMemory, &nNum, nIdx, sizeof(nNum), MAX_DATA);
-	nIdx += CopyToBuffer(pMemory, &cNum, nIdx, sizeof(cNum), MAX_DATA);
-	nIdx += CopyToBuffer(pMemory, aNum, nIdx, sizeof(aNum), MAX_DATA);
+	if (nErr != 0)
+	{//初期化に失敗した場合(※エラーメッセージを表示して終了)
 
-	//出力
-	Output(pMemory);
-
-	//Enter入力待ち
-	WaitPressEnter();
-}
-
-namespace
-{
-//-------------------------------------------------
-//ゼロクリア
-//-------------------------------------------------
-void ZeroClear(unsigned char* pMemory)
-{
-	//メモリのセット
-	memset(&pMemory[0], 0, sizeof(pMemory));
-}
-
-//-------------------------------------------------
-//値をコピーする
-//-------------------------------------------------
-int CopyToBuffer(unsigned char* pMemory, void* pSource, int nIdx, int nSize, int nMaxSize)
-{
-	if ((nIdx + nSize) <= nMaxSize)
-	{//バッファオーバーランのチェックして問題無し
-		memcpy(&pMemory[nIdx], pSource, nSize);
-	}
-	else
-	{//オーバーランしている
-		printf("\n ※ バッファオーバーラン ※");	//メッセージ
 	}
 
-	return nSize;
-}
+	/* 3.ソケット作成 */
 
-//-------------------------------------------------
-//出力
-//-------------------------------------------------
-void Output(unsigned char* pMemory)
-{
-	//pMemoryのポインタ
-	unsigned char* pSource = pMemory;
+	SOCKET sockServer;
+	sockServer = socket(AF_INET, SOCK_STREAM, 0);	//socket関数：ソケットを作成する。接続受付用のソケット作成
 
-	//メッセージ
-	printf("\n 《 16進数表示 》\n");
+	if (sockServer == INVALID_SOCKET)
+	{//エラーメッセージを表示して終了
 
-	//インデックス数
-	int nIdx = sizeof(int) + sizeof(char) + sizeof(int[MAX_NUMBER]);
-
-	for (int i = 0; i < nIdx; i++)
-	{//16進数で表示する
-		printf("\n [ 0x%.2x ]", *(pSource + i));
 	}
-}
 
-//-------------------------------------------------
-//Enter入力待ち
-//-------------------------------------------------
-void WaitPressEnter(void)
-{
-	printf("\n\n Press Enter");		//メッセージ
-	rewind(stdin);
-	getchar();
+	/* 4.接続を受け付けるための準備 */
+
+	struct sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(22333);	/* ポート番号 */
+	addr.sin_addr.S_un.S_addr = INADDR_ANY;
+	bind(sockServer, (struct sockaddr*)&addr, sizeof(addr));	//bind関数：ソケットにポートを割り当て
+	listen(sockServer, 10);		/* 保留中の接続最大数 */		//listen関数：接続受付の準備
+
+	/* 5.接続を待つ */
+
+	struct sockaddr_in clientAddr;
+	int nLength = sizeof(clientAddr);
+	SOCKET sock = accept(sockServer, (struct sockaddr*)&clientAddr, &nLength);	//accept関数：接続を受け付ける
+
+	/* 6.データの送信 */
+
+	int nData = 12345;
+	char aData[MAX_DATA];
+	memcpy(&aData[0], &nData, sizeof(int));
+	send(sock, &aData[0], sizeof(int), 0);	//send関数：データを送信する
+
+	/* 7.接続を切断する */
+
+	//クライアントとの接続を閉じる
+	closesocket(sock);
+
+	//接続受付用ソケットを閉じる
+	closesocket(sockServer);		//closesocket関数：ソケットを閉じる
+
+	/* 8.Winsock終了処理 */
+
+	WSACleanup();	//WSACleanup関数：winsockの終了処理
 }
-}// namespaceはここまで

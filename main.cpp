@@ -61,6 +61,10 @@ void main(void)
 	int nLength = sizeof(clientAddr);
 	SOCKET sock = accept(sockServer, (struct sockaddr*)&clientAddr, &nLength);	//accept関数：接続を受け付ける
 
+	//接続元のIPアドレス・ポート番号取得
+	const char* pClientIP = inet_ntoa(clientAddr.sin_addr);
+	int nClientPort = clientAddr.sin_port;
+
 	/* データを受け取って計算 */
 
 	//データを受け取る

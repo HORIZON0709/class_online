@@ -33,7 +33,7 @@ void main(void)
 
 	if (nErr != 0)
 	{//初期化に失敗した場合(※エラーメッセージを表示して終了)
-
+		printf("\n 初期化失敗");
 	}
 
 	/* 3.ソケット作成 */
@@ -43,7 +43,7 @@ void main(void)
 
 	if (sockServer == INVALID_SOCKET)
 	{//エラーメッセージを表示して終了
-
+		printf("\n error");
 	}
 
 	/* 4.接続を受け付けるための準備 */

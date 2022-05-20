@@ -61,11 +61,24 @@ void main(void)
 	int nLength = sizeof(clientAddr);
 	SOCKET sock = accept(sockServer, (struct sockaddr*)&clientAddr, &nLength);	//accept関数：接続を受け付ける
 
+	/* データを受け取って計算 */
+
+	//データを受け取る
+	char aRecvData[MAX_DATA] = {};
+	int nRecvByte = recv(sock, &aRecvData[0], sizeof(aRecvData), 0);	//recv関数：データを受信する
+	int nRecvData = 0;
+	memcpy(&nRecvData, &aRecvData[0], sizeof(int));
+
+	nRecvData *= 2;	//受け取った値を2倍にする
+
 	/* 6.データの送信 */
 
-	int nData = 12345;
+	//変数
+	//int nData = 44444444;
 	char aData[MAX_DATA];
-	memcpy(&aData[0], &nData, sizeof(int));
+
+	//データを送る
+	memcpy(&aData[0], &nRecvData, sizeof(int));
 	send(sock, &aData[0], sizeof(int), 0);	//send関数：データを送信する
 
 	/* 7.接続を切断する */

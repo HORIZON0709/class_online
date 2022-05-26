@@ -18,7 +18,8 @@
 //*******************************
 namespace
 {
-const int MAX_DATA = 4;		//データの最大数
+const int MAX_DATA = 4;			//データの最大数
+const int ANSWER_NUMBER = 79;	//正解の値
 }//namespaceはここまで
 
 //=================================================
@@ -65,26 +66,27 @@ void main(void)
 	const char* pClientIP = inet_ntoa(clientAddr.sin_addr);
 	int nClientPort = clientAddr.sin_port;
 
-	/* データを受け取って計算 */
-
-	//データを受け取る
-	char aRecvData[MAX_DATA] = {};
-	int nRecvByte = recv(sock, &aRecvData[0], sizeof(aRecvData), 0);	//recv関数：データを受信する
-	int nRecvData = 0;
-	memcpy(&nRecvData, &aRecvData[0], sizeof(int));
-
-	nRecvData *= 2;	//受け取った値を2倍にする
-
 	/* 6.データの送信 */
 
 	//変数
-	//int nData = 44444444;
+	int nAnswer = ANSWER_NUMBER;
 	char aData[MAX_DATA];
 
-	//データを送る
-	memcpy(&aData[0], &nRecvData, sizeof(int));
+	//解答を送る
+	memcpy(&aData[0], &nAnswer, sizeof(int));
 	send(sock, &aData[0], sizeof(int), 0);	//send関数：データを送信する
 
+	/* データを受け取って計算 */
+
+	////データを受け取る
+	//char aRecvData[MAX_DATA] = {};
+	//int nRecvByte = recv(sock, &aRecvData[0], sizeof(aRecvData), 0);	//recv関数：データを受信する
+	//int nRecvData = 0;
+	//memcpy(&nRecvData, &aRecvData[0], sizeof(int));
+
+	////受信した値を表示
+	//printf("\n [ クライアント(%c)から %d を受信 ]", pClientIP, nRecvData);
+	
 	/* 7.接続を切断する */
 
 	//クライアントとの接続を閉じる

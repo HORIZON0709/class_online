@@ -72,21 +72,13 @@ void main(void)
 	int nAnswer = ANSWER_NUMBER;
 	char aData[MAX_DATA];
 
+	//エンディアン変換(host to network)
+	nAnswer = htonl(nAnswer);
+
 	//解答を送る
 	memcpy(&aData[0], &nAnswer, sizeof(int));
 	send(sock, &aData[0], sizeof(int), 0);	//send関数：データを送信する
 
-	/* データを受け取って計算 */
-
-	////データを受け取る
-	//char aRecvData[MAX_DATA] = {};
-	//int nRecvByte = recv(sock, &aRecvData[0], sizeof(aRecvData), 0);	//recv関数：データを受信する
-	//int nRecvData = 0;
-	//memcpy(&nRecvData, &aRecvData[0], sizeof(int));
-
-	////受信した値を表示
-	//printf("\n [ クライアント(%c)から %d を受信 ]", pClientIP, nRecvData);
-	
 	/* 7.接続を切断する */
 
 	//クライアントとの接続を閉じる

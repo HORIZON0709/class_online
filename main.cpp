@@ -18,8 +18,8 @@
 //*******************************
 namespace
 {
-const int MAX_QUESTION = 24;	//最大問題数
-const int MAX_DATA = 256;		//データの最大数
+const int MAX_QUESTION = 24;				//最大問題数
+const int MAX_DATA = 256;					//データの最大数
 }//namespaceはここまで
 
 //*******************************
@@ -34,60 +34,23 @@ typedef struct
 }ResponseMsg;
 }//namespaceはここまで
 
+//*******************************
+//プロトタイプ宣言
+//*******************************
+namespace
+{
+void LoadFile(ResponseMsg* pRpsMsg);
+}//namespaceはここまで
+
 //=================================================
 //メイン関数
 //=================================================
 void main(void)
 {
 	ResponseMsg aRpsMsg[MAX_QUESTION] = {};	//応答メッセージ
-
-	//ファイルを開く
-	FILE* pFile = fopen("data/Answer.txt","r");
-
-	if (pFile != NULL)
-	{//ファイルが開けたら
-		char aText[MAX_DATA];	//テキスト格納用
-		int nCnt = 0;
-
-		while (strncmp(&aText[0], "SCRIPT", 6) != 0)
-		{//テキストの最初の行を読み込むまで繰り返す
-			fgets(aText, MAX_DATA, pFile);		//1行丸ごと読み込む
-		}
-
-		while (1)
-		{
-			fscanf(pFile, "%s", &aText[0]);		/* 読み込み開始 */
-
-			if (strcmp(&aText[0], "END_SCRIPT") == 0)
-			{//テキストの最終行
-				break;	//読み込み終了
-			}
-
-			if (strncmp(&aText[0], "#-", 2) == 0)
-			{//見出しで囲うやつ
-				continue;	//『読み込み開始』まで戻る
-			}
-			else if (strncmp(&aText[0], "#", 1) == 0)
-			{//コメント
-				fgets(aText, MAX_DATA, pFile);	//1行丸ごと読み込む
-				continue;	//『読み込み開始』まで戻る
-			}
-
-			if (strcmp(&aText[0], "Question") == 0)
-			{//質問判定文字列
-				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
-				fscanf(pFile, "%s", &aRpsMsg[nCnt].aJudgeMsg[0]);	//質問判定文字列を読み込む
-				continue;	//『読み込み開始』まで戻る
-			}
-			else if (strcmp(&aText[0], "Answer") == 0)
-			{//回答
-				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
-				fscanf(pFile, "%s", &aRpsMsg[nCnt].aJudgeMsg[0]);	//回答を読み込む
-				nCnt++;	//カウントアップ
-				continue;	//『読み込み開始』まで戻る
-			}
-		}
-	}
+	
+	//ファイル読み込み
+	LoadFile(&aRpsMsg[0]);
 
 	/*
 		Winsockの初期化関数を実行する
@@ -149,21 +112,20 @@ void main(void)
 
 		/* 質問への返答 */
 
-		char aSendBuffer[MAX_DATA] = {};
+		char aSendBuffer[MAX_DATA] = {};	//回答送信用
 
-		if (strstr(&aRecvQuestion[0], "食べ物"))
-		{//好きな食べ物
-			strcpy(&aSendBuffer[0], "好きな食べ物はマグロです。");
-		}
+		for (int i = 0; i < MAX_QUESTION; i++)
+		{//質問判定文字列と比較する
+			if (strstr(&aRecvQuestion[0], &aRpsMsg[i].aJudgeMsg[0]) == false)
+			{//部分一致しない場合
+				continue;
+			}
 
-		if (strstr(&aRecvQuestion[0], "ゲーム"))
-		{//好きなゲーム
-			strcpy(&aSendBuffer[0], "好きなゲームはゼルダの伝説、ドラクエなどです。");
-		}
+			/* 部分一致した場合 */
 
-		if (strstr(&aRecvQuestion[0], "誕生日"))
-		{//誕生日
-			strcpy(&aSendBuffer[0], "7月9日です。");
+			//回答をコピー
+			strcpy(&aSendBuffer[0], &aRpsMsg[i].aResponseMsg[0]);
+			break;
 		}
 
 		//解答を送る
@@ -186,3 +148,68 @@ void main(void)
 
 	WSACleanup();	//winsockの終了処理
 }
+
+namespace
+{
+//-------------------------------------------------
+//ファイルを読み込む
+//-------------------------------------------------
+void LoadFile(ResponseMsg* pRpsMsg)
+{
+	//ファイルを開く
+	FILE* pFile = fopen("data/Answer.txt", "r");
+
+	if (pFile != NULL)
+	{//ファイルが開けたら
+		char aText[MAX_DATA];	//テキスト格納用
+		int nCnt = 0;
+
+		while (strncmp(&aText[0], "SCRIPT", 6) != 0)
+		{//テキストの最初の行を読み込むまで繰り返す
+			fgets(aText, MAX_DATA, pFile);		//1行丸ごと読み込む
+		}
+
+		while (1)
+		{
+			fscanf(pFile, "%s", &aText[0]);		/* 読み込み開始 */
+
+			if (strcmp(&aText[0], "END_SCRIPT") == 0)
+			{//テキストの最終行
+				break;	//読み込み終了
+			}
+
+			if (strncmp(&aText[0], "#-", 2) == 0)
+			{//見出しで囲うやつ
+				continue;	//『読み込み開始』まで戻る
+			}
+			else if (strncmp(&aText[0], "#", 1) == 0)
+			{//コメント
+				fgets(aText, MAX_DATA, pFile);	//1行丸ごと読み込む
+				continue;	//『読み込み開始』まで戻る
+			}
+
+			if (strcmp(&aText[0], "Question") == 0)
+			{//質問判定文字列
+				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
+				fscanf(pFile, "%s", &pRpsMsg[nCnt].aJudgeMsg[0]);	//質問判定文字列を読み込む
+				continue;	//『読み込み開始』まで戻る
+			}
+			else if (strcmp(&aText[0], "Answer") == 0)
+			{//回答
+				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
+				fscanf(pFile, "%s", &pRpsMsg[nCnt].aJudgeMsg[0]);	//回答を読み込む
+				nCnt++;	//カウントアップ
+				continue;	//『読み込み開始』まで戻る
+			}
+		}
+
+		//ファイルを閉じる
+		fclose(pFile);
+	}
+
+	/* ファイルが開けなかったら */
+
+	//メッセージ
+	printf("\n ファイルが開けません。");
+}
+}//namespaceはここまで

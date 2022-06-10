@@ -197,7 +197,7 @@ void LoadFile(ResponseMsg* pRpsMsg)
 			else if (strcmp(&aText[0], "Answer") == 0)
 			{//回答
 				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
-				fscanf(pFile, "%s", &pRpsMsg[nCnt].aJudgeMsg[0]);	//回答を読み込む
+				fscanf(pFile, "%s", &pRpsMsg[nCnt].aResponseMsg[0]);	//回答を読み込む
 				nCnt++;	//カウントアップ
 				continue;	//『読み込み開始』まで戻る
 			}
@@ -205,6 +205,7 @@ void LoadFile(ResponseMsg* pRpsMsg)
 
 		//ファイルを閉じる
 		fclose(pFile);
+		return;
 	}
 
 	/* ファイルが開けなかったら */

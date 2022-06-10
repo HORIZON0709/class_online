@@ -29,8 +29,8 @@ namespace
 {
 typedef struct
 {/* 応答メッセージ */
-	char aJudgeMsg[MAX_DATA];
-	char aResponseMsg[MAX_DATA];
+	char aJudgeMsg[MAX_DATA];		//質問判定文
+	char aResponseMsg[MAX_DATA];	//回答
 }ResponseMsg;
 }//namespaceはここまで
 
@@ -114,9 +114,11 @@ void main(void)
 
 		char aSendBuffer[MAX_DATA] = {};	//回答送信用
 
-		for (int i = 0; i < MAX_QUESTION; i++)
+		int i = 0;	//カウント
+
+		for (i = 0; i < MAX_QUESTION; i++)
 		{//質問判定文字列と比較する
-			if (strstr(&aRecvQuestion[0], &aRpsMsg[i].aJudgeMsg[0]) == false)
+			if (!strstr(&aRpsMsg[i].aJudgeMsg[0], &aRecvQuestion[0]))
 			{//部分一致しない場合
 				continue;
 			}
@@ -128,8 +130,11 @@ void main(void)
 			break;
 		}
 
-		//解答を送る
+		//回答を送る
 		send(sock, &aSendBuffer[0], strlen(&aSendBuffer[0]) + 1, 0);
+
+		//送った回答を表示
+		printf("\n [%s]に[%s]を送信しました。", &pClientIP[0], &aRpsMsg[i].aResponseMsg[0]);
 	}
 
 	/*
@@ -191,7 +196,7 @@ void LoadFile(ResponseMsg* pRpsMsg)
 			if (strcmp(&aText[0], "Question") == 0)
 			{//質問判定文字列
 				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
-				fscanf(pFile, "%s", &pRpsMsg[nCnt].aJudgeMsg[0]);	//質問判定文字列を読み込む
+				fscanf(pFile, "%s", &pRpsMsg[nCnt].aJudgeMsg[0]);	//質問判定を読み込む
 				continue;	//『読み込み開始』まで戻る
 			}
 			else if (strcmp(&aText[0], "Answer") == 0)

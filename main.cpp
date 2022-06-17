@@ -18,8 +18,8 @@
 //*******************************
 namespace
 {
-const int MAX_QUESTION = 24;				//最大問題数
-const int MAX_DATA = 256;					//データの最大数
+const int MAX_QUESTION = 32;	//最大問題数
+const int MAX_DATA = 512;		//データの最大数
 }//namespaceはここまで
 
 //*******************************
@@ -48,6 +48,8 @@ void LoadFile(ResponseMsg* pRpsMsg);
 void main(void)
 {
 	ResponseMsg aRpsMsg[MAX_QUESTION] = {};	//応答メッセージ
+	aRpsMsg[0].aJudgeMsg[0] = {};
+	aRpsMsg[0].aResponseMsg[0] = {};
 	
 	//ファイル読み込み
 	LoadFile(&aRpsMsg[0]);
@@ -101,8 +103,9 @@ void main(void)
 
 	while (1)
 	{
+		char aRecvQuestion[MAX_DATA] = {};	//質問受信用
+
 		//質問を受信
-		char aRecvQuestion[MAX_DATA] = {};
 		int nRecvByte = recv(sock, &aRecvQuestion[0], sizeof(aRecvQuestion), 0);
 
 		if (nRecvByte <= 0)
@@ -118,7 +121,7 @@ void main(void)
 
 		for (i = 0; i < MAX_QUESTION; i++)
 		{//質問判定文字列と比較する
-			if (!strstr(&aRpsMsg[i].aJudgeMsg[0], &aRecvQuestion[0]))
+			if (!strstr(&aRecvQuestion[0], &aRpsMsg[i].aJudgeMsg[0]))
 			{//部分一致しない場合
 				continue;
 			}
@@ -166,7 +169,7 @@ void LoadFile(ResponseMsg* pRpsMsg)
 
 	if (pFile != NULL)
 	{//ファイルが開けたら
-		char aText[MAX_DATA];	//テキスト格納用
+		char aText[MAX_DATA] = "\0";	//テキスト格納用
 		int nCnt = 0;
 
 		while (strncmp(&aText[0], "SCRIPT", 6) != 0)
@@ -197,14 +200,12 @@ void LoadFile(ResponseMsg* pRpsMsg)
 			{//質問判定文字列
 				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
 				fscanf(pFile, "%s", &pRpsMsg[nCnt].aJudgeMsg[0]);	//質問判定を読み込む
-				continue;	//『読み込み開始』まで戻る
 			}
 			else if (strcmp(&aText[0], "Answer") == 0)
 			{//回答
 				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
 				fscanf(pFile, "%s", &pRpsMsg[nCnt].aResponseMsg[0]);	//回答を読み込む
 				nCnt++;	//カウントアップ
-				continue;	//『読み込み開始』まで戻る
 			}
 		}
 

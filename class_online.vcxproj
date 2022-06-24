@@ -148,10 +148,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="tcp_listener.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="tcp_client.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="tcp_listener.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="tcp_client.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

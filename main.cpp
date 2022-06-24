@@ -8,7 +8,8 @@
 //*******************************
 //インクルード
 //*******************************
-#include "main.h"
+#include "tcp_listener.h"
+#include "tcp_client.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -66,47 +67,36 @@ void main(void)
 		printf("\n 初期化失敗");
 	}
 
-	/*
-		ソケット作成
-	*/
+	/* TCPリスナー */
 
-	SOCKET sockServer;
-	sockServer = socket(AF_INET, SOCK_STREAM, 0);	//ソケットを作成する。接続受付用のソケット作成
+	CTcpListener* pTcpListener = nullptr;	//ポインタ
 
-	if (sockServer == INVALID_SOCKET)
-	{//エラーメッセージを表示して終了
-		printf("\n error");
+	if (pTcpListener != nullptr)
+	{//NULLチェック
+		pTcpListener = nullptr;
 	}
 
-	/*
-		接続を受け付けるための準備
-	*/
+	if (pTcpListener == nullptr)
+	{//NULLチェック
+		pTcpListener = new CTcpListener;	//メモリの動的確保
+	}
 
-	struct sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(22333);
-	addr.sin_addr.S_un.S_addr = INADDR_ANY;
-	bind(sockServer, (struct sockaddr*)&addr, sizeof(addr));	//ソケットにポートを割り当て
-	listen(sockServer, 10);										//接続受付の準備
+	//初期化
+	pTcpListener->Init(22333);
 
-	/*
-		接続を待つ
-	*/
-
-	struct sockaddr_in clientAddr;
-	int nLength = sizeof(clientAddr);
-	SOCKET sock = accept(sockServer, (struct sockaddr*)&clientAddr, &nLength);	//接続を受け付ける
-
-	//接続元のIPアドレス・ポート番号取得
-	const char* pClientIP = inet_ntoa(clientAddr.sin_addr);
-	int nClientPort = clientAddr.sin_port;
+	//接続を待つ
+	CTcpClient* pTcpClient =  pTcpListener->Accept();
 
 	while (1)
 	{
 		char aRecvQuestion[MAX_DATA] = {};	//質問受信用
+		int nRecvByte = 0;					//受信データのサイズ
 
 		//質問を受信
-		int nRecvByte = recv(sock, &aRecvQuestion[0], sizeof(aRecvQuestion), 0);
+		pTcpClient->Recv(&aRecvQuestion[0], nRecvByte);
+
+		//質問を受信
+		//int nRecvByte = recv(sock, &aRecvQuestion[0], sizeof(aRecvQuestion), 0);
 
 		if (nRecvByte <= 0)
 		{//接続が切断されたら
@@ -134,10 +124,13 @@ void main(void)
 		}
 
 		//回答を送る
-		send(sock, &aSendBuffer[0], strlen(&aSendBuffer[0]) + 1, 0);
+		pTcpClient->Send(&aSendBuffer[0], strlen(&aSendBuffer[0]) + 1);
+
+		//回答を送る
+		//send(sock, &aSendBuffer[0], strlen(&aSendBuffer[0]) + 1, 0);
 
 		//送った回答を表示
-		printf("\n [%s]に[%s]を送信しました。", &pClientIP[0], &aRpsMsg[i].aResponseMsg[0]);
+		printf("\n [%s]に[%s]を送信しました。", CTcpClient::MY_ADDRESS, &aRpsMsg[i].aResponseMsg[0]);
 	}
 
 	/*
@@ -145,10 +138,16 @@ void main(void)
 	*/
 
 	//クライアントとの接続を閉じる
-	closesocket(sock);
+	pTcpClient->Uninit();
+
+	//クライアントとの接続を閉じる
+	//closesocket(sock);
 
 	//接続受付用ソケットを閉じる
-	closesocket(sockServer);		//ソケットを閉じる
+	pTcpListener->Uninit();
+
+	//接続受付用ソケットを閉じる
+	//closesocket(sockServer);		//ソケットを閉じる
 
 	/*
 		Winsock終了処理
@@ -167,56 +166,55 @@ void LoadFile(ResponseMsg* pRpsMsg)
 	//ファイルを開く
 	FILE* pFile = fopen("data/Answer.txt", "r");
 
-	if (pFile != NULL)
-	{//ファイルが開けたら
-		char aText[MAX_DATA] = "\0";	//テキスト格納用
-		int nCnt = 0;
-
-		while (strncmp(&aText[0], "SCRIPT", 6) != 0)
-		{//テキストの最初の行を読み込むまで繰り返す
-			fgets(aText, MAX_DATA, pFile);		//1行丸ごと読み込む
-		}
-
-		while (1)
-		{
-			fscanf(pFile, "%s", &aText[0]);		/* 読み込み開始 */
-
-			if (strcmp(&aText[0], "END_SCRIPT") == 0)
-			{//テキストの最終行
-				break;	//読み込み終了
-			}
-
-			if (strncmp(&aText[0], "#-", 2) == 0)
-			{//見出しで囲うやつ
-				continue;	//『読み込み開始』まで戻る
-			}
-			else if (strncmp(&aText[0], "#", 1) == 0)
-			{//コメント
-				fgets(aText, MAX_DATA, pFile);	//1行丸ごと読み込む
-				continue;	//『読み込み開始』まで戻る
-			}
-
-			if (strcmp(&aText[0], "Question") == 0)
-			{//質問判定文字列
-				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
-				fscanf(pFile, "%s", &pRpsMsg[nCnt].aJudgeMsg[0]);	//質問判定を読み込む
-			}
-			else if (strcmp(&aText[0], "Answer") == 0)
-			{//回答
-				fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
-				fscanf(pFile, "%s", &pRpsMsg[nCnt].aResponseMsg[0]);	//回答を読み込む
-				nCnt++;	//カウントアップ
-			}
-		}
-
-		//ファイルを閉じる
-		fclose(pFile);
+	if (pFile == nullptr)
+	{//ファイルが開けなかったら
+		printf("\n ファイルが開けません。");	//メッセージ
 		return;
 	}
 
-	/* ファイルが開けなかったら */
+	/* ファイルが開けたら */
 
-	//メッセージ
-	printf("\n ファイルが開けません。");
+	char aText[MAX_DATA] = "\0";	//テキスト格納用
+	int nCnt = 0;					//カウント
+
+	while (strncmp(&aText[0], "SCRIPT", 6) != 0)
+	{//テキストの最初の行を読み込むまで繰り返す
+		fgets(aText, MAX_DATA, pFile);		//1行丸ごと読み込む
+	}
+
+	while (1)
+	{
+		fscanf(pFile, "%s", &aText[0]);		/* 読み込み開始 */
+
+		if (strcmp(&aText[0], "END_SCRIPT") == 0)
+		{//テキストの最終行
+			break;	//読み込み終了
+		}
+
+		if (strncmp(&aText[0], "#-", 2) == 0)
+		{//見出しで囲うやつ
+			continue;	//『読み込み開始』まで戻る
+		}
+		else if (strncmp(&aText[0], "#", 1) == 0)
+		{//コメント
+			fgets(aText, MAX_DATA, pFile);	//1行丸ごと読み込む
+			continue;	//『読み込み開始』まで戻る
+		}
+
+		if (strcmp(&aText[0], "Question") == 0)
+		{//質問判定文字列
+			fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
+			fscanf(pFile, "%s", &pRpsMsg[nCnt].aJudgeMsg[0]);	//質問判定を読み込む
+		}
+		else if (strcmp(&aText[0], "Answer") == 0)
+		{//回答
+			fscanf(pFile, "%s", &aText[0]);	//「 = 」を読み込む
+			fscanf(pFile, "%s", &pRpsMsg[nCnt].aResponseMsg[0]);	//回答を読み込む
+			nCnt++;	//カウントアップ
+		}
+	}
+
+	//ファイルを閉じる
+	fclose(pFile);
 }
 }//namespaceはここまで

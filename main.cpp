@@ -81,11 +81,16 @@ void main(void)
 		pTcpListener = new CTcpListener;	//メモリの動的確保
 	}
 
-	//初期化
-	pTcpListener->Init(22333);
+	if ((pTcpListener == nullptr) || !(pTcpListener->Init(22333)))
+	{//インスタンスがnullptr or 初期化に失敗
+		pTcpListener->Uninit();	//接続受付用ソケットを閉じる
+		WSACleanup();			//winsockの終了処理
+	}
+
+	/* nullptrではない & 初期化に成功 */
 
 	//接続を待つ
-	CTcpClient* pTcpClient =  pTcpListener->Accept();
+	CTcpClient* pTcpClient = pTcpListener->Accept();
 
 	while (1)
 	{
@@ -93,14 +98,11 @@ void main(void)
 		int nRecvByte = 0;					//受信データのサイズ
 
 		//質問を受信
-		pTcpClient->Recv(&aRecvQuestion[0], nRecvByte);
-
-		//質問を受信
-		//int nRecvByte = recv(sock, &aRecvQuestion[0], sizeof(aRecvQuestion), 0);
+		nRecvByte = pTcpClient->Recv(&aRecvQuestion[0], sizeof(aRecvQuestion));
 
 		if (nRecvByte <= 0)
 		{//接続が切断されたら
-			break;
+			break;	//ループ終了
 		}
 
 		/* 質問への返答 */
@@ -126,28 +128,23 @@ void main(void)
 		//回答を送る
 		pTcpClient->Send(&aSendBuffer[0], strlen(&aSendBuffer[0]) + 1);
 
-		//回答を送る
-		//send(sock, &aSendBuffer[0], strlen(&aSendBuffer[0]) + 1, 0);
-
 		//送った回答を表示
-		printf("\n [%s]に[%s]を送信しました。", CTcpClient::MY_ADDRESS, &aRpsMsg[i].aResponseMsg[0]);
+		//printf("\n [%s]に[%s]を送信しました。", &pClientIP[0], &aRpsMsg[i].aResponseMsg[0]);
+	}
+
+	if (pTcpClient != nullptr)
+	{//NULLチェック
+		pTcpClient->Uninit();	//終了
+		delete pTcpClient;		//メモリの解放
+		pTcpClient = nullptr;	//nullptrにする
 	}
 
 	/*
 		接続を切断する
 	*/
 
-	//クライアントとの接続を閉じる
-	pTcpClient->Uninit();
-
-	//クライアントとの接続を閉じる
-	//closesocket(sock);
-
-	//接続受付用ソケットを閉じる
+	//終了(接続受付用ソケットを閉じる)
 	pTcpListener->Uninit();
-
-	//接続受付用ソケットを閉じる
-	//closesocket(sockServer);		//ソケットを閉じる
 
 	/*
 		Winsock終了処理

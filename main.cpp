@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <thread>
 
 //*******************************
 //定数の定義
@@ -44,54 +45,10 @@ void LoadFile(ResponseMsg* pRpsMsg);
 }//namespaceはここまで
 
 //=================================================
-//メイン関数
+//スレッドプロシージャ
 //=================================================
-void main(void)
+void ThreadProc(CTcpClient* pTcpClient, ResponseMsg aRpsMsg[])
 {
-	ResponseMsg aRpsMsg[MAX_QUESTION] = {};	//応答メッセージ
-	aRpsMsg[0].aJudgeMsg[0] = {};
-	aRpsMsg[0].aResponseMsg[0] = {};
-	
-	//ファイル読み込み
-	LoadFile(&aRpsMsg[0]);
-
-	/*
-		Winsockの初期化関数を実行する
-	*/
-
-	WSADATA wsaData;
-	int nErr = WSAStartup(WINSOCK_VERSION, &wsaData);	//winsockの初期化処理
-
-	if (nErr != 0)
-	{//初期化に失敗した場合(※エラーメッセージを表示して終了)
-		printf("\n 初期化失敗");
-	}
-
-	/* TCPリスナー */
-
-	CTcpListener* pTcpListener = nullptr;	//ポインタ
-
-	if (pTcpListener != nullptr)
-	{//NULLチェック
-		pTcpListener = nullptr;
-	}
-
-	if (pTcpListener == nullptr)
-	{//NULLチェック
-		pTcpListener = new CTcpListener;	//メモリの動的確保
-	}
-
-	if ((pTcpListener == nullptr) || !(pTcpListener->Init(22333)))
-	{//インスタンスがnullptr or 初期化に失敗
-		pTcpListener->Uninit();	//接続受付用ソケットを閉じる
-		WSACleanup();			//winsockの終了処理
-	}
-
-	/* nullptrではない & 初期化に成功 */
-
-	//接続を待つ
-	CTcpClient* pTcpClient = pTcpListener->Accept();
-
 	while (1)
 	{
 		char aRecvQuestion[MAX_DATA] = {};	//質問受信用
@@ -129,7 +86,68 @@ void main(void)
 		pTcpClient->Send(&aSendBuffer[0], strlen(&aSendBuffer[0]) + 1);
 
 		//送った回答を表示
-		//printf("\n [%s]に[%s]を送信しました。", &pClientIP[0], &aRpsMsg[i].aResponseMsg[0]);
+		printf("\n [%s]を送信しました。", &aRpsMsg[i].aResponseMsg[0]);
+	}
+}
+
+//=================================================
+//メイン関数
+//=================================================
+void main(void)
+{
+	ResponseMsg aRpsMsg[MAX_QUESTION] = {};	//応答メッセージ
+	aRpsMsg[0].aJudgeMsg[0] = {};
+	aRpsMsg[0].aResponseMsg[0] = {};
+
+	//ファイル読み込み
+	LoadFile(&aRpsMsg[0]);
+
+	/*
+		Winsockの初期化関数を実行する
+	*/
+
+	WSADATA wsaData;
+	int nErr = WSAStartup(WINSOCK_VERSION, &wsaData);	//winsockの初期化処理
+
+	if (nErr != 0)
+	{//初期化に失敗した場合(※エラーメッセージを表示して終了)
+		printf("\n 初期化失敗");
+	}
+
+	/* TCPリスナー */
+
+	CTcpListener* pTcpListener = nullptr;	//ポインタ
+
+	if (pTcpListener != nullptr)
+	{//NULLチェック
+		pTcpListener = nullptr;
+	}
+
+	if (pTcpListener == nullptr)
+	{//NULLチェック
+		pTcpListener = new CTcpListener;	//メモリの動的確保
+	}
+
+	if ((pTcpListener == nullptr) || !(pTcpListener->Init(22333)))
+	{//インスタンスがnullptr or 初期化に失敗
+		pTcpListener->Uninit();	//接続受付用ソケットを閉じる
+		WSACleanup();			//winsockの終了処理
+	}
+
+	/* nullptrではない & 初期化に成功 */
+
+	CTcpClient* pTcpClient = nullptr;
+
+	while (1)
+	{
+		//接続を待つ
+		pTcpClient = pTcpListener->Accept();
+
+		//スレッドの作成
+		std::thread th(ThreadProc, pTcpClient, aRpsMsg);
+
+		//スレッドを切り離す
+		th.detach();
 	}
 
 	if (pTcpClient != nullptr)

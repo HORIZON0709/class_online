@@ -66,7 +66,7 @@ Answer = 二四三慧護「異能解放-----雷公石火！！」
 Question = 雷公石火
 Answer = 二四三慧護「雨良し、雷良し-----拳良し！！」
 
-Question = 朝倉正義
+Question = 浅倉正義
 Answer = 二四三慧護「あいつの正義は、俺の正義でもある」
 
 Question = 西門東

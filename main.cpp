@@ -88,6 +88,13 @@ void ThreadProc(CTcpClient* pTcpClient, ResponseMsg aRpsMsg[])
 		//送った回答を表示
 		printf("\n [%s]を送信しました。", &aRpsMsg[i].aResponseMsg[0]);
 	}
+
+	if (pTcpClient != nullptr)
+	{//NULLチェック
+		pTcpClient->Uninit();	//終了
+		delete pTcpClient;		//メモリの解放
+		pTcpClient = nullptr;	//nullptrにする
+	}
 }
 
 //=================================================
@@ -150,12 +157,7 @@ void main(void)
 		th.detach();
 	}
 
-	if (pTcpClient != nullptr)
-	{//NULLチェック
-		pTcpClient->Uninit();	//終了
-		delete pTcpClient;		//メモリの解放
-		pTcpClient = nullptr;	//nullptrにする
-	}
+	
 
 	/*
 		接続を切断する

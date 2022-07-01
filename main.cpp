@@ -143,12 +143,10 @@ void main(void)
 
 	/* nullptrではない & 初期化に成功 */
 
-	CTcpClient* pTcpClient = nullptr;
-
 	while (1)
 	{
 		//接続を待つ
-		pTcpClient = pTcpListener->Accept();
+		CTcpClient* pTcpClient = pTcpListener->Accept();
 
 		//スレッドの作成
 		std::thread th(ThreadProc, pTcpClient, aRpsMsg);
@@ -156,8 +154,6 @@ void main(void)
 		//スレッドを切り離す
 		th.detach();
 	}
-
-	
 
 	/*
 		接続を切断する
